@@ -45,6 +45,8 @@ int		Saturated[Max_mult];
 double		Start_time;
 int		Channel[Max_mult];
 double		Time[Max_mult];
+double 		Wave[Max_mult][1024];
+int		Coincidence;
 
 struct waveform {
 	std::vector<double> t;
@@ -82,6 +84,7 @@ void processWaveform( waveform * thisWave, TTree * outtree ){
 	double prev_val = V->at(0)*gain;
 	bool saturated = false;
 
+
 	for( int i = 0; i < t->size() ; i++ ){
 		double thisT = t->at(i) - start_time;
 		double thisV = V->at(i) * gain;
@@ -107,6 +110,7 @@ void processWaveform( waveform * thisWave, TTree * outtree ){
 	// Now we need to correct for the baseline to Q,A:
 	A -= (q_baseline / num_baseline); 	// corrects by average baseline
 	q -= (q_baseline / num_baseline * num); // corrects by average baseline under entire waveform
+	
 
 	Amp[Mult] = A;
 	Charge[Mult] = q;
@@ -119,6 +123,47 @@ void processWaveform( waveform * thisWave, TTree * outtree ){
 
 	return;
 };
+
+void saveCoincidence( waveform* ch1, waveform* ch2, waveform* ch3, TTree * outtree ){
+
+	std::vector<double>* V1 = &(ch1->V);
+	std::vector<double>* V2 = &(ch2->V);
+	std::vector<double>* V3 = &(ch3->V);
+		
+	if( Amp[0] > 490 ) return;
+	if( Amp[1] > 490 ) return;
+	if( Amp[2] > 490 ) return;
+	if( Charge[0] < 0 ) return;
+	if( Charge[1] < 0 ) return;
+	if( Charge[2] < 0 ) return;
+
+	double a_sum = Amp[0]+Amp[1]+Amp[2];
+	double q_sum = Charge[0]+Charge[1]+Charge[2];
+	if( V1->size() != 1024 ) return;
+	if( V2->size() != 1024 ) return;
+	if( V3->size() != 1024 ) return;
+
+	//if( a_sum < 350 && (q_sum/a_sum) < 55 ){
+	//	Coincidence = 1;
+	//	// save waveform
+	//	for( int i = 0 ; i < 1024 ; ++i ){
+	//		Wave[0][i] = V1->at(i) * gain - Baseline[0];
+	//		Wave[1][i] = V2->at(i) * gain - Baseline[1];
+	//		Wave[2][i] = V3->at(i) * gain - Baseline[2];
+	//	}
+	//}
+	if( a_sum > 400 && (q_sum/a_sum) > 50 ){
+		Coincidence = 1;
+		// save waveform
+		for( int i = 0 ; i < 1024 ; ++i ){
+			Wave[0][i] = V1->at(i) * gain - Baseline[0];
+			Wave[1][i] = V2->at(i) * gain - Baseline[1];
+			Wave[2][i] = V3->at(i) * gain - Baseline[2];
+		}
+	}
+
+	return;
+}
 
 void processEvent( event * thisEvent , TTree * outtree ){
 
@@ -136,10 +181,13 @@ void processEvent( event * thisEvent , TTree * outtree ){
 	Channel[Mult]=4;
 	Mult++;
 
+	Coincidence = 0;
+	saveCoincidence( ch1, ch3, ch4, outtree );
+
 	Event++;
 
 	if( Event % 1000 == 0 ) cout << "On event " << Event << "\n";
-
+	//cout << "filling event\n";
 	outtree->Fill();
 
 	//cout << "\n";

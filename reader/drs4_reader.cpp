@@ -86,6 +86,9 @@ endElement(void *userData, const XML_Char *name) {
 		Start_time = 0;
 		memset(Channel,0,sizeof(Channel));
 		memset(Time,0,sizeof(Time));
+		for( int ch = 0 ; ch < Max_mult ; ++ch ){
+			memset(Wave[ch],0,sizeof(Wave[ch]));
+		}
 
 		//exit(-1);
 	}
@@ -174,6 +177,8 @@ int main(int argc, char** argv) {
 	outtree->Branch("width_t",	Width,		"width_t[mult]/D"	);
 	outtree->Branch("q_base",	Baseline,	"q_base[mult]/D"	);
 	outtree->Branch("saturated",	Saturated,	"saturated[mult]/I"	);
+	outtree->Branch("wave",		Wave,		"wave[mult][1024]/D"	);
+	outtree->Branch("coincidence",	&Coincidence,	"coincidence/I"		);
 
 
 	XML_Parser parser = XML_ParserCreate(NULL);

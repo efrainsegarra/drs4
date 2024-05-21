@@ -12,8 +12,13 @@ add_executable(drs4_reader
     drs4_reader.cpp
 )
 
+add_executable(analyze
+    analyze.cpp
+)
+
 # a) for CMake >=3.10 (see CMake's FindEXPAT docs)
 target_link_libraries(drs4_reader PUBLIC EXPAT::EXPAT ${ROOT_LIBRARIES})
+target_link_libraries(analyze PUBLIC ${ROOT_LIBRARIES})
 
 # b) for CMake >=3.0
 #target_include_directories(hello PRIVATE ${EXPAT_INCLUDE_DIRS})
